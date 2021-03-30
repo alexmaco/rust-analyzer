@@ -128,7 +128,7 @@ struct FlycheckActor {
 
 enum Event {
     Restart(Restart),
-    CheckEvent(Option<cargo_metadata::Message>),
+    CheckEvent(Option<Box<cargo_metadata::Message>>),
 }
 
 impl FlycheckActor {
@@ -179,7 +179,7 @@ impl FlycheckActor {
                     }
                     self.progress(Progress::DidFinish(res));
                 }
-                Event::CheckEvent(Some(message)) => match message {
+                Event::CheckEvent(Some(message)) => match *message {
                     cargo_metadata::Message::CompilerArtifact(msg) => {
                         self.progress(Progress::DidCheckCrate(msg.target.name));
                     }
@@ -261,7 +261,7 @@ struct CargoHandle {
     child: JodChild,
     #[allow(unused)]
     thread: jod_thread::JoinHandle<io::Result<bool>>,
-    receiver: Receiver<cargo_metadata::Message>,
+    receiver: Receiver<Box<cargo_metadata::Message>>,
 }
 
 impl CargoHandle {
@@ -294,13 +294,13 @@ impl CargoHandle {
 
 struct CargoActor {
     child_stdout: process::ChildStdout,
-    sender: Sender<cargo_metadata::Message>,
+    sender: Sender<Box<cargo_metadata::Message>>,
 }
 
 impl CargoActor {
     fn new(
         child_stdout: process::ChildStdout,
-        sender: Sender<cargo_metadata::Message>,
+        sender: Sender<Box<cargo_metadata::Message>>,
     ) -> CargoActor {
         CargoActor { child_stdout, sender }
     }
@@ -330,7 +330,7 @@ impl CargoActor {
             match &message {
                 cargo_metadata::Message::CompilerArtifact(artifact) if artifact.fresh => (),
                 cargo_metadata::Message::BuildScriptExecuted(_) => (),
-                _ => self.sender.send(message).unwrap(),
+                _ => self.sender.send(Box::new(message)).unwrap(),
             }
         }
         Ok(read_at_least_one_message)
