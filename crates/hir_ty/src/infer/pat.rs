@@ -170,7 +170,7 @@ impl<'a> InferenceContext<'a> {
                 TyKind::Ref(mutability, subty).intern(&Interner)
             }
             Pat::TupleStruct { path: p, args: subpats, ellipsis } => self.infer_tuple_struct_pat(
-                p.as_ref(),
+                p.as_deref(),
                 subpats,
                 expected,
                 default_bm,
@@ -178,7 +178,7 @@ impl<'a> InferenceContext<'a> {
                 *ellipsis,
             ),
             Pat::Record { path: p, args: fields, ellipsis: _ } => {
-                self.infer_record_pat(p.as_ref(), fields, expected, default_bm, pat)
+                self.infer_record_pat(p.as_deref(), fields, expected, default_bm, pat)
             }
             Pat::Path(path) => {
                 // FIXME use correct resolver for the surrounding expression
